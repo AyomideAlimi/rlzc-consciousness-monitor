@@ -1,0 +1,647 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{
+    background:#f0f4f8;
+    font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+    min-height:100vh;
+    color:#1a2332;
+  }
+
+  /* HEADER */
+  .header{
+    background:#000000;
+    padding:16px 20px;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+  }
+  .header-left{display:flex;align-items:center;gap:12px;}
+  .header-logo{
+    width:32px;height:32px;
+    background:#222;
+    border:1px solid #444;
+    border-radius:6px;
+    display:flex;align-items:center;justify-content:center;
+    font-size:13px;color:white;font-weight:bold;
+  }
+  .header-title{color:white;font-size:15px;font-weight:600;}
+  .header-sub{color:#999;font-size:11px;margin-top:2px;}
+  .header-badge{
+    background:#111;
+    border:1px solid #333;
+    color:#888;
+    font-size:10px;
+    padding:4px 10px;
+    border-radius:20px;
+  }
+
+  /* SELF TEST STRIP */
+  .test-strip{
+    background:#111;
+    border-bottom:1px solid #222;
+    padding:8px 20px;
+    display:flex;
+    align-items:center;
+    gap:8px;
+    font-size:11px;
+    color:#666;
+  }
+  .test-strip .dot{
+    width:8px;height:8px;border-radius:50%;
+    background:#64748b;flex-shrink:0;
+  }
+  .test-strip .dot.pass{background:#22c55e;}
+  .test-strip .dot.fail{background:#ef4444;}
+  .test-label{color:#94a3b8;}
+  .test-result{font-weight:600;}
+  .test-result.pass{color:#22c55e;}
+  .test-result.fail{color:#ef4444;}
+
+  /* MAIN LAYOUT */
+  .main{padding:20px;max-width:700px;margin:0 auto;}
+
+  /* UPLOAD CARD */
+  .card{
+    background:white;
+    border-radius:12px;
+    border:1px solid #e2e8f0;
+    padding:20px;
+    margin-bottom:16px;
+    box-shadow:0 1px 3px rgba(0,0,0,0.06);
+  }
+  .card-title{
+    font-size:12px;font-weight:600;
+    color:#64748b;text-transform:uppercase;
+    letter-spacing:0.05em;margin-bottom:14px;
+  }
+  .upload-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px;}
+  .upload-item label{
+    display:block;font-size:11px;color:#64748b;
+    margin-bottom:5px;font-weight:500;
+  }
+  .upload-item input[type=file]{
+    display:block;width:100%;
+    padding:10px 12px;
+    background:#f8fafc;
+    border:1.5px dashed #cbd5e1;
+    border-radius:8px;
+    color:#475569;
+    font-size:11px;
+    cursor:pointer;
+    font-family:inherit;
+  }
+  .upload-item input[type=file].loaded{
+    border-color:#2563eb;
+    background:#eff6ff;
+    color:#1d4ed8;
+  }
+
+  /* RUN BUTTON */
+  #runBtn{
+    width:100%;padding:13px;
+    background:#e2e8f0;color:#94a3b8;
+    border:none;border-radius:8px;
+    font-size:14px;font-weight:600;
+    cursor:not-allowed;font-family:inherit;
+    transition:all 0.2s;
+  }
+  #runBtn.ready{
+    background:#2563eb;color:white;cursor:pointer;
+  }
+  #runBtn.ready:hover{background:#1d4ed8;}
+
+  /* MONITOR DISPLAY — main result */
+  .monitor{
+    background:#1a2332;
+    border-radius:12px;
+    padding:20px;
+    margin-bottom:16px;
+    display:none;
+  }
+  .monitor.show{display:block;}
+  .monitor-grid{
+    display:grid;grid-template-columns:1fr 1fr;
+    gap:16px;margin-bottom:16px;
+  }
+  .monitor-block{
+    background:#162032;
+    border-radius:8px;
+    padding:14px;
+    border:1px solid #2d3f55;
+  }
+  .monitor-block .mlabel{
+    font-size:10px;color:#64748b;
+    text-transform:uppercase;letter-spacing:0.05em;
+    margin-bottom:6px;
+  }
+  .monitor-block .mval{
+    font-size:22px;font-weight:700;color:white;
+    font-variant-numeric:tabular-nums;
+  }
+  .monitor-block .mval.green{color:#22c55e;}
+  .monitor-block .mval.blue{color:#60a5fa;}
+  .monitor-block .msub{
+    font-size:10px;color:#475569;margin-top:3px;
+  }
+
+  /* TREND CHART */
+  .chart-wrap{
+    background:#162032;border-radius:8px;
+    padding:12px;border:1px solid #2d3f55;
+    margin-bottom:16px;
+  }
+  .chart-label{
+    font-size:10px;color:#64748b;
+    text-transform:uppercase;letter-spacing:0.05em;
+    margin-bottom:8px;
+  }
+  canvas{width:100%;height:140px;display:block;}
+
+  /* VALIDATION CARD */
+  .val-card{
+    background:white;border-radius:12px;
+    border:1px solid #e2e8f0;padding:20px;
+    margin-bottom:16px;display:none;
+    box-shadow:0 1px 3px rgba(0,0,0,0.06);
+  }
+  .val-card.show{display:block;}
+  .val-card .card-title{color:#64748b;}
+  .val-status{
+    display:flex;align-items:center;gap:10px;
+    padding:12px;border-radius:8px;
+    background:#f0fdf4;border:1px solid #bbf7d0;
+    margin-bottom:10px;
+  }
+  .val-status .icon{font-size:18px;}
+  .val-status .vtext{font-size:13px;font-weight:600;color:#166534;}
+  .val-status .vsub{font-size:11px;color:#4ade80;margin-top:2px;}
+  .val-detail{font-size:11px;color:#64748b;line-height:1.6;}
+
+  /* LOG */
+  .log-card{
+    background:white;border-radius:12px;
+    border:1px solid #e2e8f0;padding:16px;
+    box-shadow:0 1px 3px rgba(0,0,0,0.06);
+  }
+  #log{
+    height:160px;overflow-y:auto;
+    font-size:10px;line-height:1.7;
+    color:#64748b;white-space:pre-wrap;
+    font-family:'SF Mono','Fira Code',monospace;
+  }
+
+  /* RESPONSIVE */
+  @media(max-width:480px){
+    .upload-grid{grid-template-columns:1fr;}
+    .monitor-grid{grid-template-columns:1fr;}
+  }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="header">
+  <div class="header-left">
+    <div class="header-logo">rL</div>
+    <div>
+      <div class="header-title">rLZC Consciousness Monitor</div>
+      <div class="header-sub">Relative Lempel-Ziv Complexity · Threshold θ = 0.05</div>
+    </div>
+  </div>
+  <div class="header-badge">Research Use Only</div>
+</div>
+
+<!-- SELF TEST STRIP -->
+<div class="test-strip" id="testStrip">
+  <div class="dot" id="testDot"></div>
+  <span class="test-label">Algorithm self-test:</span>
+  <span class="test-result" id="testResult">running...</span>
+</div>
+
+<div class="main">
+
+  <!-- UPLOAD -->
+  <div class="card">
+    <div class="card-title">Load EEG Recording</div>
+    <div class="upload-grid">
+      <div class="upload-item">
+        <label>EEG Signal File (PSG)</label>
+        <input type="file" id="psgInput" placeholder="Select .edf file">
+      </div>
+      <div class="upload-item">
+        <label>Sleep Stage Annotations</label>
+        <input type="file" id="hypInput" placeholder="Select hypnogram .edf">
+      </div>
+    </div>
+    <button id="runBtn" disabled>Select both files to begin analysis</button>
+  </div>
+
+  <!-- MONITOR DISPLAY -->
+  <div class="monitor" id="monitor">
+    <div class="monitor-grid">
+      <div class="monitor-block">
+        <div class="mlabel">Transition Detected</div>
+        <div class="mval green" id="msVal">—</div>
+        <div class="msub" id="msUnit">milliseconds from recording start</div>
+      </div>
+      <div class="monitor-block">
+        <div class="mlabel">vs Clinical Annotation</div>
+        <div class="mval blue" id="deltaVal">—</div>
+        <div class="msub" id="deltaSub">seconds from N2 epoch boundary</div>
+      </div>
+      <div class="monitor-block">
+        <div class="mlabel">Precision</div>
+        <div class="mval" id="precVal">±10 ms</div>
+        <div class="msub">one sample at 100 Hz</div>
+      </div>
+      <div class="monitor-block">
+        <div class="mlabel">Baseline LZC</div>
+        <div class="mval" id="baseVal">—</div>
+        <div class="msub">median, 30–20 min pre-transition</div>
+      </div>
+    </div>
+    <div class="chart-wrap">
+      <div class="chart-label">rLZC Trend · threshold at 0.05 · N2 annotation in amber · transition in green</div>
+      <canvas id="plot" width="660" height="140"></canvas>
+    </div>
+  </div>
+
+  <!-- VALIDATION -->
+  <div class="val-card" id="valCard">
+    <div class="card-title">Behavioral Validation</div>
+    <div class="val-status" id="valStatus">
+      <div class="icon">⚡</div>
+      <div>
+        <div class="vtext" id="valText">—</div>
+        <div class="vsub" id="valSub">—</div>
+      </div>
+    </div>
+    <div class="val-detail" id="valDetail">—</div>
+  </div>
+
+  <!-- LOG -->
+  <div class="log-card">
+    <div class="card-title" style="margin-bottom:10px;">Processing Log</div>
+    <div id="log">Waiting for files...</div>
+  </div>
+
+</div>
+
+<script>
+// ═══════════════════════════════════════════════
+// LZC — Kaspar-Schuster 1987
+// ═══════════════════════════════════════════════
+function lzc(seg){
+  const n=seg.length;
+  if(n<10) return NaN;
+  const sorted=[...seg].sort((a,b)=>a-b);
+  const med=sorted[Math.floor(n/2)];
+  const s=new Uint8Array(n);
+  let ones=0;
+  for(let i=0;i<n;i++){s[i]=seg[i]>med?1:0;ones+=s[i];}
+  if(ones===0||ones===n) return 0.1;
+  let c=1,l=1,i=0,k=1,kmax=1,guard=0;
+  while(guard++<n*10){
+    if(l+k-1>=n||i+k-1>=n){c++;break;}
+    if(s[i+k-1]===s[l+k-1]){k++;}
+    else{
+      if(k>kmax)kmax=k;
+      i++;
+      if(i===l){c++;l+=kmax;if(l>=n)break;i=0;k=1;kmax=1;}
+      else k=1;
+    }
+  }
+  return c/(n/Math.log2(n));
+}
+
+// ═══════════════════════════════════════════════
+// SELF TEST
+// ═══════════════════════════════════════════════
+function runSelfTest(){
+  const z=new Float64Array(400).fill(0);
+  const t1=lzc(z)<=0.15;
+  const n=new Float64Array(400).map(()=>Math.random()*2-1);
+  const s=new Float64Array(400).map((_,i)=>Math.sin(2*Math.PI*i/20));
+  const vn=lzc(n),vs=lzc(s);
+  const t2=vn>vs;
+  const t3=(vn-vs)/vn>0.05;
+  const t4=Math.abs((vn-lzc(n))/vn)<0.01;
+  const ok=t1&&t2&&t3&&t4;
+  const dot=document.getElementById('testDot');
+  const res=document.getElementById('testResult');
+  const strip=document.getElementById('testStrip');
+  dot.className='dot '+(ok?'pass':'fail');
+  res.className='test-result '+(ok?'pass':'fail');
+  res.textContent=ok?'All checks passed — algorithm verified':'Failed — do not use';
+  return ok;
+}
+const stOk=runSelfTest();
+
+// ═══════════════════════════════════════════════
+// LOG
+// ═══════════════════════════════════════════════
+const logEl=document.getElementById('log');
+function log(m){logEl.textContent+='\n'+m;logEl.scrollTop=logEl.scrollHeight;}
+function logClear(){logEl.textContent='';}
+
+// ═══════════════════════════════════════════════
+// FILES
+// ═══════════════════════════════════════════════
+let psgFile=null,hypFile=null;
+document.getElementById('psgInput').addEventListener('change',function(){
+  psgFile=this.files[0];this.classList.add('loaded');
+  log('PSG loaded: '+psgFile.name);checkReady();
+});
+document.getElementById('hypInput').addEventListener('change',function(){
+  hypFile=this.files[0];this.classList.add('loaded');
+  log('Annotations loaded: '+hypFile.name);checkReady();
+});
+function checkReady(){
+  if(psgFile&&hypFile){
+    const b=document.getElementById('runBtn');
+    b.disabled=false;
+    b.textContent='▶  Run Analysis';
+    b.classList.add('ready');
+  }
+}
+
+// ═══════════════════════════════════════════════
+// EDF PARSER
+// ═══════════════════════════════════════════════
+function parseEDF(buf){
+  const b=new Uint8Array(buf);
+  const str=(s,l)=>String.fromCharCode(...b.slice(s,s+l)).trim();
+  const hBytes=parseInt(str(184,8));
+  const nSig=parseInt(str(252,4));
+  const labels=[];
+  for(let i=0;i<nSig;i++) labels.push(str(256+i*16,16));
+  const nspr=[];
+  for(let i=0;i<nSig;i++) nspr.push(parseInt(str(256+nSig*216+i*8,8)));
+  const recDur=parseFloat(str(244,8));
+  const nRec=parseInt(str(236,8));
+  const fs=nspr[0]/recDur;
+  let eegCh=0;
+  for(let i=0;i<labels.length;i++){
+    if(labels[i].toUpperCase().includes('FPZ')||
+       labels[i].toUpperCase().includes('EEG')){eegCh=i;break;}
+  }
+  let evtCh=-1;
+  for(let i=0;i<labels.length;i++){
+    const l=labels[i].toUpperCase();
+    if(l.includes('MARKER')||l.includes('EVENT')||
+       l.includes('STATUS')){evtCh=i;break;}
+  }
+  const physMin=parseFloat(str(256+nSig*104+eegCh*8,8));
+  const physMax=parseFloat(str(256+nSig*112+eegCh*8,8));
+  const digMin=parseFloat(str(256+nSig*120+eegCh*8,8));
+  const digMax=parseFloat(str(256+nSig*128+eegCh*8,8));
+  const gain=(physMax-physMin)/(digMax-digMin);
+  const off=physMin-gain*digMin;
+  const total=nspr.reduce((a,x)=>a+x,0);
+  let eegOff=0;
+  for(let i=0;i<eegCh;i++) eegOff+=nspr[i];
+  const sig=new Float64Array(nRec*nspr[eegCh]);
+  let idx=0;
+  for(let r=0;r<nRec;r++){
+    const rs=hBytes+r*total*2+eegOff*2;
+    for(let s=0;s<nspr[eegCh];s++){
+      const p=rs+s*2;let v=b[p]|(b[p+1]<<8);
+      if(v>32767)v-=65536;
+      sig[idx++]=v*gain+off;
+    }
+  }
+  // Button presses
+  let buttonPresses=[];
+  if(evtCh>=0){
+    const ePhysMin=parseFloat(str(256+nSig*104+evtCh*8,8));
+    const ePhysMax=parseFloat(str(256+nSig*112+evtCh*8,8));
+    const eDigMin=parseFloat(str(256+nSig*120+evtCh*8,8));
+    const eDigMax=parseFloat(str(256+nSig*128+evtCh*8,8));
+    const eGain=(ePhysMax-ePhysMin)/(eDigMax-eDigMin);
+    const eOff=ePhysMin-eGain*eDigMin;
+    const evtFs=nspr[evtCh]/recDur;
+    let evtOff=0;
+    for(let i=0;i<evtCh;i++) evtOff+=nspr[i];
+    const mSig=[];
+    for(let r=0;r<nRec;r++){
+      const rs=hBytes+r*total*2+evtOff*2;
+      for(let s=0;s<nspr[evtCh];s++){
+        const p=rs+s*2;let v=b[p]|(b[p+1]<<8);
+        if(v>32767)v-=65536;
+        mSig.push(v*eGain+eOff);
+      }
+    }
+    const mSorted=[...mSig].sort((a,b)=>a-b);
+    const mBase=mSorted[Math.floor(mSorted.length/2)];
+    const pressThresh=mBase+20;
+    let inPress=false,pressStart=0;
+    for(let i=0;i<mSig.length;i++){
+      if(!inPress&&mSig[i]>=pressThresh){inPress=true;pressStart=i;}
+      else if(inPress&&mSig[i]<pressThresh){
+        inPress=false;
+        if(i-pressStart>=Math.floor(0.5*evtFs))
+          buttonPresses.push({t:pressStart/evtFs});
+      }
+    }
+  }
+  log('Channels: '+labels.join(', '));
+  log('EEG: '+labels[eegCh]+' | '+fs+'Hz | '+(sig.length/fs/60).toFixed(1)+' min');
+  log('Button presses detected: '+buttonPresses.length);
+  return{sig,fs,labels,eegCh,buttonPresses};
+}
+
+// ═══════════════════════════════════════════════
+// HYPNOGRAM
+// ═══════════════════════════════════════════════
+function parseHypnogram(buf){
+  const b=new Uint8Array(buf);
+  let text='';
+  const chunk=8192;
+  for(let i=0;i<b.length;i+=chunk)
+    text+=String.fromCharCode(...b.slice(i,Math.min(i+chunk,b.length)));
+  const stages=[];
+  const patterns=[
+    /\+(\d+\.?\d*)[\x14\x15]\d*[\x14\x15]Sleep stage ([W1234R])/g,
+    /\+(\d+\.?\d*)[\x14\x15][\x14\x15]Sleep stage ([W1234R])/g,
+  ];
+  for(const re of patterns){
+    let m;
+    while((m=re.exec(text))!==null)
+      stages.push({onset:parseFloat(m[1]),stage:m[2]});
+    if(stages.length>0) break;
+  }
+  if(stages.length===0){
+    const marker='Sleep stage ';
+    let pos=text.indexOf(marker);
+    while(pos!==-1&&stages.length<1000){
+      const sc=text[pos+marker.length];
+      if('W1234R'.includes(sc)){
+        const lb=text.slice(Math.max(0,pos-30),pos);
+        const om=lb.match(/\+(\d+\.?\d*)/);
+        if(om) stages.push({onset:parseFloat(om[1]),stage:sc});
+      }
+      pos=text.indexOf(marker,pos+1);
+    }
+  }
+  return stages;
+}
+
+function findWakeToN2(stages){
+  for(let i=0;i<stages.length;i++){
+    if(stages[i].stage==='2'){
+      for(let j=Math.max(0,i-3);j<i;j++){
+        if(stages[j].stage==='W') return stages[i].onset;
+      }
+    }
+  }
+  return null;
+}
+
+// ═══════════════════════════════════════════════
+// SCAN + CROSSING
+// ═══════════════════════════════════════════════
+function scan(sig,fs,step,win,s0,s1){
+  s0=s0||0;s1=s1||sig.length;
+  const ws=Math.floor(win*fs),ss=Math.max(1,Math.floor(step*fs));
+  const T=[],L=[];
+  for(let s=s0;s<Math.min(s1,sig.length)-ws;s+=ss){
+    T.push((s+ws/2)/fs);L.push(lzc(sig.slice(s,s+ws)));
+  }
+  return{T,L};
+}
+
+function findCross(T,L,base,thresh){
+  const R=L.map(v=>isNaN(v)?NaN:(base-v)/base);
+  let run=0;
+  for(let i=0;i<R.length;i++){
+    if(isNaN(R[i]))continue;
+    run=R[i]>=thresh?run+1:0;
+    if(run>=3) return{t:T[i-2],rlzc:R[i-2],lzcVal:L[i-2]};
+  }
+  for(let i=1;i<R.length;i++){
+    if(isNaN(R[i])||isNaN(R[i-1]))continue;
+    if(R[i-1]<thresh&&R[i]>=thresh) return{t:T[i],rlzc:R[i],lzcVal:L[i]};
+  }
+  return null;
+}
+
+function fineSample(sig,fs,coarseT,win,trigger){
+  const ws=Math.floor(win*fs);
+  const s0=Math.max(0,Math.floor((coarseT-4)*fs));
+  const s1=Math.min(sig.length-ws,Math.floor((coarseT+4)*fs));
+  for(let s=s0;s<=s1;s++){
+    const v=lzc(sig.slice(s,s+ws));
+    if(!isNaN(v)&&v<=trigger) return{sample:s,timeMs:(s/fs)*1000,lzcVal:v};
+  }
+  return null;
+}
+
+// ═══════════════════════════════════════════════
+// PLOT
+// ═══════════════════════════════════════════════
+function plot(T,rLZC,crossT,annotT,presses){
+  const cv=document.getElementById('plot');
+  const ctx=cv.getContext('2d');
+  const W=cv.width,H=cv.height;
+  ctx.fillStyle='#162032';ctx.fillRect(0,0,W,H);
+  const vs=rLZC.filter(v=>!isNaN(v)&&isFinite(v));
+  if(!vs.length)return;
+  const mn=Math.min(...vs)-0.05,mx=Math.max(...vs)+0.05;
+  const px=t=>(t-T[0])/(T[T.length-1]-T[0])*(W-30)+15;
+  const py=v=>H-((v-mn)/(mx-mn)*(H-20)+10);
+  // Grid lines
+  ctx.strokeStyle='#1e2d3f';ctx.lineWidth=1;
+  for(let i=0;i<=4;i++){
+    const y=10+i*(H-20)/4;
+    ctx.beginPath();ctx.moveTo(15,y);ctx.lineTo(W-15,y);ctx.stroke();
+  }
+  // Zero line
+  if(0>=mn&&0<=mx){
+    ctx.strokeStyle='#2d3f55';ctx.lineWidth=1;
+    ctx.beginPath();ctx.moveTo(15,py(0));ctx.lineTo(W-15,py(0));ctx.stroke();
+  }
+  // Threshold line
+  if(0.05>=mn&&0.05<=mx){
+    ctx.strokeStyle='#f59e0b';ctx.lineWidth=1;ctx.setLineDash([4,4]);
+    ctx.beginPath();ctx.moveTo(15,py(0.05));ctx.lineTo(W-15,py(0.05));ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.fillStyle='#f59e0b';ctx.font='9px system-ui';
+    ctx.fillText('θ = 0.05',W-48,py(0.05)-4);
+  }
+  // Annotation
+  if(annotT&&annotT>=T[0]&&annotT<=T[T.length-1]){
+    ctx.strokeStyle='#f59e0b';ctx.lineWidth=1.5;ctx.setLineDash([3,4]);
+    ctx.beginPath();ctx.moveTo(px(annotT),8);ctx.lineTo(px(annotT),H-8);ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.fillStyle='#f59e0b';ctx.font='9px system-ui';
+    ctx.fillText('N2',px(annotT)+3,18);
+  }
+  // Button presses
+  for(const p of(presses||[])){
+    if(p.t>=T[0]&&p.t<=T[T.length-1]){
+      ctx.fillStyle='#60a5fa';
+      ctx.beginPath();
+      ctx.arc(px(p.t),H-8,3,0,Math.PI*2);
+      ctx.fill();
+    }
+  }
+  // rLZC curve
+  ctx.strokeStyle='#60a5fa';ctx.lineWidth=2;ctx.beginPath();
+  let st=false;
+  for(let i=0;i<T.length;i++){
+    if(isNaN(rLZC[i])||!isFinite(rLZC[i]))continue;
+    st?ctx.lineTo(px(T[i]),py(rLZC[i])):ctx.moveTo(px(T[i]),py(rLZC[i]));
+    st=true;
+  }
+  ctx.stroke();
+  // Transition marker
+  if(crossT&&crossT>=T[0]&&crossT<=T[T.length-1]){
+    ctx.strokeStyle='#22c55e';ctx.lineWidth=2;
+    ctx.beginPath();ctx.moveTo(px(crossT),8);ctx.lineTo(px(crossT),H-8);ctx.stroke();
+    ctx.fillStyle='#22c55e';ctx.font='bold 9px system-ui';
+    ctx.fillText('TRANSITION',px(crossT)+4,H-10);
+  }
+}
+
+// ═══════════════════════════════════════════════
+// MAIN
+// ═══════════════════════════════════════════════
+document.getElementById('runBtn').addEventListener('click',async function(){
+  if(!stOk){alert('Algorithm self-test failed. Do not use.');return;}
+  logClear();
+  document.getElementById('monitor').classList.remove('show');
+  document.getElementById('valCard').classList.remove('show');
+  log('Analysis started...');
+
+  const WIN=4.0,THRESH=0.05;
+
+  // Hypnogram
+  let stages;
+  try{stages=parseHypnogram(await hypFile.arrayBuffer());}
+  catch(e){log('Error reading annotations: '+e.message);return;}
+  if(!stages.length){log('No sleep stages found.');return;}
+  const transSec=findWakeToN2(stages);
+  if(!transSec){log('No Wake→N2 transition found.');return;}
+  log('Wake→N2 annotation: '+(transSec/60).toFixed(2)+' min');
+
+  // PSG
+  let edf;
+  try{edf=parseEDF(await psgFile.arrayBuffer());}
+  catch(e){log('Error reading EEG: '+e.message);return;}
+  const{sig,fs,buttonPresses}=edf;
+
+  // Baseline
+  const bS0=Math.max(0,Math.floor((transSec-30*60)*fs));
+  const bS1=Math.max(0,Math.floor((transSec-20*60)*fs));
+  const ws=Math.floor(WIN*fs);
+  let bv=[];
+  for(let s=bS0;s<bS1-ws;s+=ws){
+    const v=lzc(sig.slice(s,s+ws));
+    if(!isNaN(v)&&isFinite(v)) bv.push(v);
+  }
+  if(!bv.length){log('Baseline comp
